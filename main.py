@@ -24,19 +24,24 @@ for page in response_stocks_db.json()["results"]:
     page_icon = page['icon']
     props = page['properties']
     asset_code = props['Ticker']['rich_text'][0]['plain_text']
+
     quote = nse.get_quote(asset_code)
+
+    # removing "Limited" | "Ltd" from company name
     company_name = quote['companyName']
     company_name = company_name.replace("Limited", "")
+    company_name = company_name.replace("Ltd", "")
+    
     stock_price = quote['lastPrice']
     percent_change = float(quote['pChange'])
-    value_change = quote['change']
+    value_change = float(quote['change'])
 
     data_price = {"properties":
                   {
-                      "Price": {"number": stock_price},
-                      "% Change": {"number": percent_change},
-                      # "Value Change": {"number": value_change},
-                      "URL": {"url": "https://www.nseindia.com/get-quotes/equity?symbol=" + asset_code},
+                      "Current Price": {"number": stock_price},
+                      "1D %": {"number": percent_change},
+                      "1D value": {"number": value_change},
+                      "Screener URL": {"url": "https://www.screener.in/company/" + asset_code},
                       "Name": {
                           "title": [
                               {"text": {"content": company_name}}
@@ -56,7 +61,7 @@ for page in response_crypto_db.json()["results"]:
     page_id = page["id"]
     page_icon = page['icon']
     props = page['properties']
-    asset_code = props['Ticker']['rich_text'][0]['plain_text']
+    asset_code = props['Ticker']['title'][0]['text']['content']
     request_by_code = requests.get(base_crypto_url).json()['data']
 
     coin = next(

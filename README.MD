@@ -4,8 +4,9 @@ A python script to automatically update real-time values of stocks and crypto ti
 ## Features
 - Auto update the last price, daily % and value change for NSE tickers in the Notion DB
 - Auto update the current price, 1H and 24H % change in price for Cryptocurrencies
-- Provides visual indicators for Profit/Loss
+- Provides visual indicators for Profit/Loss & Price Change
 - Page icons get auto-populated with Crypto project logo
+- Provides auto-populated Screener URL for the NSE tickers
 
 ## Requirements
 
