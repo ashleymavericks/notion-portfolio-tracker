@@ -31,16 +31,14 @@ for page in response_stocks_db.json()["results"]:
     company_name = quote['companyName']
     company_name = company_name.replace("Limited", "")
     company_name = company_name.replace("Ltd", "")
-    
+
     stock_price = quote['lastPrice']
     percent_change = float(quote['pChange'])
-    value_change = float(quote['change'])
 
     data_price = {"properties":
                   {
                       "Current Price": {"number": stock_price},
-                      "1D %": {"number": percent_change},
-                      "1D value": {"number": value_change},
+                      "1D": {"number": percent_change},
                       "Screener URL": {"url": "https://www.screener.in/company/" + asset_code},
                       "Name": {
                           "title": [
@@ -61,30 +59,38 @@ for page in response_crypto_db.json()["results"]:
     page_id = page["id"]
     page_icon = page['icon']
     props = page['properties']
-    asset_code = props['Ticker']['title'][0]['text']['content']
+    asset_code = props['Ticker']['rich_text'][0]['plain_text']
     request_by_code = requests.get(base_crypto_url).json()['data']
 
     coin = next(
         (item for item in request_by_code if item["symbol"] == asset_code), None)
 
-    if(request_by_code != []):
-        price = coin['price_usd']
-        price_btc = coin['price_btc']
-        percent_1h = coin['percent_change_1h']
-        percent_24h = coin['percent_change_24h']
-        percent_7days = coin['percent_change_7d']
+    if(request_by_code != [] and coin != None):
+        price = float(coin['price_usd'])
+        percent_1h = float(coin['percent_change_1h'])
+        percent_24h = float(coin['percent_change_24h'])
+        percent_7days = float(coin['percent_change_7d'])
+        rank = int(coin['rank'])
+        name = coin['name']
         coin_url = "https://coinmarketcap.com/currencies/" + coin['nameid']
 
-        data_price = '{"properties":   \
-                            {"Price": { "number":' + str(price) + '},\
-                            "price btc": { "number":' + str(price_btc) + '}, \
-                            "% 1H": { "number":' + str(percent_1h) + '}, \
-                            "% 24H": { "number":' + str(percent_24h) + '}, \
-                            "% 7days": { "number":' + str(percent_7days) + '}, \
-                            "URL": { "url":"' + coin_url + '"}}}'
+        data_price = {"properties": {
+            "Current Price": {"number": price},
+            "1H %": {"number": percent_1h},
+            "24H %": {"number": percent_24h},
+            "7D %": {"number": percent_7days},
+            "Rank": {"number": rank},
+            "URL": {"url": coin_url},
+            "Name": {
+                "title": [
+                    {"text": {"content": name}}
+                ]
+            }
+        }
+        }
 
         send_price = requests.patch(
-            base_pg_url + page_id, headers=header, data=data_price)
+            base_pg_url + page_id, headers=header, json=data_price)
 
         # update page icons with the appropriate crypto project logo
         if(page_icon is None):
