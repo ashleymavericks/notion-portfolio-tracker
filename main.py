@@ -2,7 +2,6 @@ from curses.ascii import islower
 from env_vars import *
 import requests
 from nsetools import Nse
-import dateutil.parser as parser
 
 nse = Nse()
 secret_key = NOTION_SECRET_KEY
