@@ -20,6 +20,8 @@ pip3 install requests nsetools
 
 [Crypto Icons API](https://cryptoicons.org/)
 
+[Notion Official API](https://developers.notion.com/reference/intro)
+
 ## Script Automation:
 Use [Cron](https://crontab.guru) or any scheduler to run the script in the frequency you want, preferred time period is 30 min or 1 hr
 

@@ -2,6 +2,7 @@ from curses.ascii import islower
 from env_vars import *
 import requests
 from nsetools import Nse
+import dateutil.parser as parser
 
 nse = Nse()
 secret_key = NOTION_SECRET_KEY
@@ -20,22 +21,22 @@ response_stocks_db = requests.post(
     base_db_url + stocks_database_id + "/query", headers=header)
 
 for page in response_stocks_db.json()["results"]:
-    page_id = page["id"]
-    page_icon = page['icon']
+    page_id = page['id']
     props = page['properties']
     asset_code = props['Ticker']['rich_text'][0]['plain_text']
-
     quote = nse.get_quote(asset_code)
-
-    # removing "Limited" | "Ltd" from company name
     company_name = quote['companyName']
+    checkbox_state = props['Trade Status']['checkbox']
+    
+    # removing "Limited" | "Ltd" from company name
     company_name = company_name.replace("Limited", "")
     company_name = company_name.replace("Ltd", "")
 
     stock_price = quote['lastPrice']
     percent_change = float(quote['pChange'])
 
-    data_price = {"properties":
+    if checkbox_state is False:
+        data_price = {"properties":
                   {
                       "Current Price": {"number": stock_price},
                       "1D": {"number": percent_change},
@@ -47,23 +48,22 @@ for page in response_stocks_db.json()["results"]:
                       }
                   }
                   }
-
-    send_price = requests.patch(
-        base_pg_url + page_id, headers=header, json=data_price)
+        send_price = requests.patch(
+            base_pg_url + page_id, headers=header, json=data_price)
 
 # Crypto section
 response_crypto_db = requests.post(
     base_db_url + crypto_database_id + "/query", headers=header)
 
 for page in response_crypto_db.json()["results"]:
-    page_id = page["id"]
+    page_id = page['id']
     page_icon = page['icon']
     props = page['properties']
     asset_code = props['Ticker']['rich_text'][0]['plain_text']
     request_by_code = requests.get(base_crypto_url).json()['data']
-
+    checkbox_state = props['Trade Status']['checkbox']
     coin = next(
-        (item for item in request_by_code if item["symbol"] == asset_code), None)
+        (item for item in request_by_code if item['symbol'] == asset_code), None)
 
     if(request_by_code != [] and coin != None):
         price = float(coin['price_usd'])
@@ -74,23 +74,24 @@ for page in response_crypto_db.json()["results"]:
         name = coin['name']
         coin_url = "https://coinmarketcap.com/currencies/" + coin['nameid']
 
-        data_price = {"properties": {
-            "Current Price": {"number": price},
-            "1H %": {"number": percent_1h},
-            "24H %": {"number": percent_24h},
-            "7D %": {"number": percent_7days},
-            "Rank": {"number": rank},
-            "URL": {"url": coin_url},
-            "Name": {
-                "title": [
-                    {"text": {"content": name}}
-                ]
+        if checkbox_state is False:
+            data_price = {"properties": {
+                "Current Price": {"number": price},
+                "1H %": {"number": percent_1h},
+                "24H %": {"number": percent_24h},
+                "7D %": {"number": percent_7days},
+                "URL": {"url": coin_url},
+                "Rank": {"number": rank},
+                "Name": {
+                    "title": [
+                        {"text": {"content": name}}
+                    ]
+                }
             }
-        }
-        }
+            }
 
-        send_price = requests.patch(
-            base_pg_url + page_id, headers=header, json=data_price)
+            send_price = requests.patch(
+                base_pg_url + page_id, headers=header, json=data_price)
 
         # update page icons with the appropriate crypto project logo
         if(page_icon is None):
